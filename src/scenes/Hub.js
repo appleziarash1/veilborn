@@ -5,6 +5,7 @@ import { W, H, C } from '../config.js';
 import { audio } from '../audio.js';
 import { gameState } from '../systems/gamestate.js';
 import { makeText, panel, Button, transitionTo } from '../ui.js';
+import { backgroundPath } from '../art.js';
 
 const MEMORY_UPGRADES = [
   { key: 'vitality', name: 'Deepened Vitality', desc: '+10 max HP per rank', cost: (r) => 40 + r * 35, max: 8 },
@@ -20,8 +21,9 @@ export class Hub extends Phaser.Scene {
   create() {
     audio.playMusic('hub');
     this.cameras.main.setBackgroundColor(0x0c0b12);
-    if (this.textures.exists('bg_hub')) {
-      const img = this.add.image(W / 2, H / 2, 'bg_hub');
+    const hubBg = backgroundPath('hub');
+    if (hubBg && this.textures.exists(hubBg)) {
+      const img = this.add.image(W / 2, H / 2, hubBg);
       img.setScale(Math.max(W / img.width, H / img.height)).setAlpha(0.45);
     }
     for (let i = 0; i < 30; i++) {

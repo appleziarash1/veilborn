@@ -2,6 +2,7 @@
 // collision resolution and tells the player when it is safe to act.
 import { KNIGHT, ARENA } from '../config.js';
 import { audio } from '../audio.js';
+import { playerPath } from '../art.js';
 
 export class Player {
   constructor(scene, x, y, run, weapon) {
@@ -27,7 +28,16 @@ export class Player {
     this.body = scene.add.container(x, y).setDepth(30);
     this.aura = scene.add.circle(0, 0, 26, weapon.color, 0.14).setDepth(-1);
     this.shadow = scene.add.ellipse(0, 12, 30, 12, 0x000000, 0.35).setDepth(-1);
-    this.core = scene.add.circle(0, 0, this.radius, 0xf4d8c2).setStrokeStyle(3, weapon.color);
+    // Art, when present, replaces the primitive core. `radius` still governs
+    // collision, so a sprite swap cannot change how the game plays.
+    const art = playerPath('idle');
+    if (art && scene.textures.exists(art)) {
+      this.sprite = scene.add.image(0, 0, art);
+      this.sprite.setDisplaySize(this.radius * 3.4, this.radius * 3.4);
+      this.core = this.sprite;
+    } else {
+      this.core = scene.add.circle(0, 0, this.radius, 0xf4d8c2).setStrokeStyle(3, weapon.color);
+    }
     this.weaponMark = scene.add.rectangle(0, 0, 26, 4, weapon.color).setOrigin(0, 0.5);
     this.body.add([this.aura, this.shadow, this.core, this.weaponMark]);
   }
@@ -105,6 +115,7 @@ export class Player {
     this.body.setPosition(this.x, this.y);
     const invuln = this.isInvulnerable(now);
     this.core.setAlpha(invuln ? (Math.floor(now / 60) % 2 ? 0.35 : 1) : 1);
+    this.weaponMark.setVisible(!this.sprite);
     this.weaponMark.setPosition(Math.cos(this.facing) * 8, Math.sin(this.facing) * 8);
     this.weaponMark.setRotation(this.facing);
     const dashing = now < this.dashUntil;

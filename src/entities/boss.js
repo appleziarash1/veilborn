@@ -2,6 +2,7 @@
 // telegraph, fire, and clean themselves up. Phases change behaviour as HP drops.
 import { ARENA } from '../config.js';
 import { audio } from '../audio.js';
+import { bossPath, tintBody } from '../art.js';
 
 export class Boss {
   constructor(scene, def, opts = {}) {
@@ -31,10 +32,22 @@ export class Boss {
 
     this.container = scene.add.container(this.x, this.y).setDepth(32);
     this.aura = scene.add.circle(0, 0, this.radius + 22, def.accent, 0.12);
-    this.core = scene.add.circle(0, 0, this.radius, def.color);
-    this.core.setStrokeStyle(4, def.accent, 0.9);
-    this.inner = scene.add.circle(0, 0, this.radius * 0.45, def.accent, 0.75);
-    this.container.add([this.aura, this.core, this.inner]);
+    // Art, when present, replaces the primitive core. The radius still governs
+    // collision and pattern ranges, so swapping in art cannot change the fight.
+    const art = bossPath(def.id);
+    if (art && scene.textures.exists(art)) {
+      this.sprite = scene.add.image(0, 0, art);
+      this.sprite.setDisplaySize(this.radius * 3.4, this.radius * 3.4);
+      this.core = this.sprite;
+      this.inner = null;
+    } else {
+      this.core = scene.add.circle(0, 0, this.radius, def.color);
+      this.core.setStrokeStyle(4, def.accent, 0.9);
+      this.inner = scene.add.circle(0, 0, this.radius * 0.45, def.accent, 0.75);
+    }
+    this.container.add(this.inner
+      ? [this.aura, this.core, this.inner]
+      : [this.aura, this.core]);
 
     this.hpBarBg = scene.add.graphics().setDepth(33);
     this.hpBar = scene.add.graphics().setDepth(34);
@@ -74,8 +87,8 @@ export class Boss {
     const s = dt / 1000;
     const player = ctx.player;
 
-    if (now < this.hitFlashUntil) this.core.setFillStyle(0xffffff);
-    else this.core.setFillStyle(this.def.color);
+    if (now < this.hitFlashUntil) tintBody(this.core, 0xffffff, this.def.color);
+    else tintBody(this.core, null, this.def.color);
 
     // Phase transition: brief exposure window + shockwave
     const newPhase = this.phaseForHp();
@@ -304,7 +317,11 @@ export class Boss {
     const exposed = this.scene.time.now < this.exposedUntil;
     this.aura.setScale(exposed ? 1.35 : 1);
     const pulse = 1 + Math.sin(this.scene.time.now / 260) * 0.04;
-    this.inner.setScale(pulse);
+    if (this.inner) this.inner.setScale(pulse);
+    else if (this.sprite) this.sprite.setScale(
+      (this.radius * 3.4 / this.sprite.width) * pulse,
+      (this.radius * 3.4 / this.sprite.height) * pulse,
+    );
   }
 
   drawBars() {

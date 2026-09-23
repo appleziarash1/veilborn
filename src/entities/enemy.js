@@ -4,6 +4,7 @@
 // without needing ten hand-written AI trees.
 import { ARENA } from '../config.js';
 import { ELITE_MODS } from '../world/rooms.js';
+import { enemyPath, tintBody } from '../art.js';
 
 export class Enemy {
   constructor(scene, x, y, archetype, opts = {}) {
@@ -41,9 +42,20 @@ export class Enemy {
 
     this.container = scene.add.container(x, y).setDepth(28);
     this.shadow = scene.add.ellipse(0, this.radius * 0.7, this.radius * 1.7, this.radius * 0.6, 0x000000, 0.3);
-    this.bodyShape = scene.add.circle(0, 0, this.radius, this.color);
-    if (this.elite) this.bodyShape.setStrokeStyle(3, this.elite.color, 1);
+    // Art, when present, replaces the primitive body. The radius still governs
+    // collision and knockback, so swapping in art cannot change how it plays.
+    // Always key off the base archetype: an elite prefixes its own name.
+    const art = enemyPath(archetype.name);
+    if (art && scene.textures.exists(art)) {
+      this.sprite = scene.add.image(0, 0, art);
+      this.sprite.setDisplaySize(this.radius * 2.6, this.radius * 2.6);
+      this.bodyShape = this.sprite;
+    } else {
+      this.bodyShape = scene.add.circle(0, 0, this.radius, this.color);
+      if (this.elite) this.bodyShape.setStrokeStyle(3, this.elite.color, 1);
+    }
     this.eye = scene.add.circle(this.radius * 0.35, -this.radius * 0.2, Math.max(2, this.radius * 0.18), 0xffffff, 0.9);
+    if (this.sprite) this.eye.setVisible(false);
     this.container.add([this.shadow, this.bodyShape, this.eye]);
 
     this.hpBar = null;
@@ -82,7 +94,7 @@ export class Enemy {
     }
     this.hp -= remaining;
     this.hitFlashUntil = now + 90;
-    this.bodyShape.setFillStyle(0xffffff);
+    tintBody(this.bodyShape, 0xffffff, this.color);
     if (opts.knockback) {
       this.knockback.x += Math.cos(opts.knockback) * (opts.knockbackForce || 90);
       this.knockback.y += Math.sin(opts.knockback) * (opts.knockbackForce || 90);
@@ -103,8 +115,8 @@ export class Enemy {
     this.knockback.x *= 0.86;
     this.knockback.y *= 0.86;
 
-    if (now < this.hitFlashUntil) this.bodyShape.setFillStyle(0xffffff);
-    else this.bodyShape.setFillStyle(this.color);
+    if (now < this.hitFlashUntil) tintBody(this.bodyShape, 0xffffff, this.color);
+    else tintBody(this.bodyShape, null, this.color);
 
     if (now < this.stunnedUntil) {
       this.syncVisual();
@@ -175,7 +187,7 @@ export class Enemy {
         } else {
           this.x += Math.cos(angle) * speed * 1.35 * s;
           this.y += Math.sin(angle) * speed * 1.35 * s;
-          if (now - this.lastAction > 1200) this.bodyShape.setFillStyle(0xffa06a);
+          if (now - this.lastAction > 1200) tintBody(this.bodyShape, 0xffa06a, this.color);
         }
         break;
       case 'guardian':

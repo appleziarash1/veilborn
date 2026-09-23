@@ -1,0 +1,82 @@
+VEILBORN — ART MANIFEST
+========================
+Protita chobi er ek line likho. Ei ta diye ami confirm korbo je sob original IP.
+
+Format:
+  filename | size (WxH) | kivabe banale | nijer design?
+
+Example:
+  ash.png | 1600x900 | AI generated, own prompt | yes
+  ash_hound.png | 128x128 | hand drawn in Krita | yes
+
+----------------------------------------
+BACKGROUNDS
+----------------------------------------
+ash.png            |         |                   |
+tides.png          |         |                   |
+frost.png          |         |                   |
+shadows.png        |         |                   |
+throne.png         |         |                   |
+hub.png            |         |                   |
+
+----------------------------------------
+PLAYER
+----------------------------------------
+cael_idle.png      |         |                   |
+cael_run.png       |         |                   |
+cael_dash.png      |         |                   |
+cael_hurt.png      |         |                   |
+cael_death.png     |         |                   |
+
+----------------------------------------
+WEAPONS
+----------------------------------------
+ashen_edge.png            |         |            |
+pyre_lance.png            |         |            |
+tempest_gauntlets.png     |         |            |
+moonthread_bow.png        |         |            |
+gravewind_scythe.png      |         |            |
+tidebreaker_chakrams.png  |         |            |
+
+----------------------------------------
+ENEMIES
+----------------------------------------
+shade_wraith.png    |         |                   |
+bone_soldier.png    |         |                   |
+ash_hound.png       |         |                   |
+void_archer.png     |         |                   |
+soul_leech.png      |         |                   |
+flame_spirit.png    |         |                   |
+frost_revenant.png  |         |                   |
+cursed_knight.png   |         |                   |
+memory_eater.png    |         |                   |
+veil_stalker.png    |         |                   |
+
+----------------------------------------
+ELITES
+----------------------------------------
+shielded.png        |         |                   |
+frenzied.png        |         |                   |
+volatile.png        |         |                   |
+warded.png          |         |                   |
+
+----------------------------------------
+BOSSES + GODS
+----------------------------------------
+zyther.png          |         |                   |
+seraphine.png       |         |                   |
+auren.png           |         |                   |
+draemor.png         |         |                   |
+hollow.png          |         |                   |
+
+----------------------------------------
+NPCS
+----------------------------------------
+keeper.png          |         |                   |
+mira.png            |         |                   |
+
+----------------------------------------
+NOTES
+----------------------------------------
+(Ekhane kono note likho — jemon: "ash.png er left side e faka rakhechi
+karon HUD okhane boshe", ba "draemor er mukh adha korechi")

@@ -1,12 +1,14 @@
-// Boot: load realm backgrounds, then hand off to the Menu.
+// Boot: load realm backgrounds and any optional hand-drawn art, then hand off
+// to the Menu.
 //
 // Content data is imported as a module (see content.js) rather than fetched, so
 // there is nothing to fail on a slow or offline connection.
 import Phaser from 'phaser';
-import { W, H, C, REALMS } from '../config.js';
+import { W, H, C } from '../config.js';
 import { gameState } from '../systems/gamestate.js';
 import { getContent } from '../content.js';
 import { makeText, bar } from '../ui.js';
+import { queueArt } from '../art.js';
 
 export class Boot extends Phaser.Scene {
   constructor() { super('Boot'); }
@@ -17,12 +19,14 @@ export class Boot extends Phaser.Scene {
     makeText(this, W / 2, H / 2 + 24, 'Descending…', { size: 16, color: C.muted, origin: 0.5 });
     this.progress = bar(this, W / 2 - 160, H / 2 + 56, 320, 10, { fill: C.purple });
 
-    REALMS.forEach((r) => this.load.image(`bg_${r.id}`, r.bg));
+    // Every optional art path is queued here; missing files are expected and
+    // handled by resolveArt(), which falls back to the procedural renderer.
+    queueArt(this);
 
     this.load.on('progress', (v) => this.progress.setRatio(v));
     this.load.on('loaderror', (file) => {
-      // Non-fatal: the arena falls back to a procedural gradient.
-      console.warn('[VEILBORN] asset failed to load:', file.key);
+      // Non-fatal: the entity falls back to its procedural shape.
+      console.info('[VEILBORN] optional art not found, using procedural:', file.key);
     });
   }
 

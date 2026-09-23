@@ -1,6 +1,7 @@
-// Arena backdrop. Uses the shipped realm SVG backgrounds when present and
-// falls back to a procedural gradient so the game always renders.
+// Arena backdrop. Uses the shipped realm backgrounds when present and falls
+// back to a procedural gradient so the game always renders.
 import { ARENA, W, H } from '../config.js';
+import { backgroundPath } from '../art.js';
 
 export class Arena {
   constructor(scene, realm) {
@@ -12,9 +13,11 @@ export class Arena {
 
   async build() {
     const { scene, realm } = this;
-    // Background image (already downloaded by the Boot scene).
-    if (scene.textures.exists(`bg_${realm.id}`)) {
-      const img = scene.add.image(W / 2, H / 2, `bg_${realm.id}`);
+    // Background image, if art exists for this realm. Keyed by path so the
+    // texture name always matches what the loader queued.
+    const bgPath = backgroundPath(realm.id);
+    if (bgPath && scene.textures.exists(bgPath)) {
+      const img = scene.add.image(W / 2, H / 2, bgPath);
       const scale = Math.max(W / img.width, H / img.height);
       img.setScale(scale).setDepth(-20).setAlpha(0.5);
     } else {

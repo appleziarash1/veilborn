@@ -4,12 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node scripts/scan-art.mjs && vite",
+    "build": "node scripts/scan-art.mjs && vite build",
     "preview": "vite preview",
-    "test": "node tests/e2e.mjs",
+    "art": "node scripts/scan-art.mjs",
+    "test": "node scripts/scan-art.mjs && node tests/e2e.mjs",
     "test:build": "npm run build && node tests/e2e.mjs",
-    "build:pages": "VITE_BASE=/veilborn/ vite build"
+    "build:pages": "node scripts/scan-art.mjs && VITE_BASE=/veilborn/ vite build"
   },
   "dependencies": {
     "phaser": "^3.90.0"
