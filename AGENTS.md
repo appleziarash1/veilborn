@@ -25,6 +25,24 @@ Live: https://appleziarash1.github.io/veilborn/ (repo `appleziarash1/veilborn`).
 - The local branch is `master` but the remote default is `main`:
   push with `git push origin master:main`.
 
+## Art pipeline
+
+Entities render as Phaser primitives so the game is playable with no art
+installed. Dropping a correctly named file into `public/assets/` makes that
+entity use the sprite instead, with no code change.
+
+- `scripts/scan-art.mjs` walks `public/assets/` and writes `src/art-manifest.js`.
+  `npm run build` and `npm run dev` run it first. **Run `npm run art` after
+  adding or removing art**, or the new file will not be requested.
+- `src/art.js` resolves slots to paths. Only files in the manifest are
+  requested, so a partly finished art pass produces no 404s.
+- Sprites replace visuals only: radii and hitboxes stay config-driven.
+- Primitives use `setFillStyle`, Images use `setTintFill`. Route hit flashes
+  through `tintBody()` in `src/art.js` rather than calling either directly.
+- The filename contract is `docs/ART_GUIDE.md`. `art-kit/` holds the
+  contributor-facing copy; `scripts/build-art-kit.mjs` publishes it plus
+  `veilborn-art-kit.zip` to `public/art-kit/` for download from the live site.
+
 ## Things that bite
 
 - **`base` must stay configurable.** Anything absolute (`/icons/...`) breaks a
