@@ -78,6 +78,16 @@ runtime sprites with `python3 scripts/extract-sprites.py`; it reads `SRC` from
   unbound and crashed every reward screen. Bind or wrap closures.
 - **Scene timers outlive their scene.** Use the scene's `later()` helper, which
   carries a session token, instead of raw `setTimeout`.
+- **Phaser will not register a second texture under an existing key.** It logs
+  `Texture key already in use` and returns `null`, so slicing a loaded strip in
+  place silently yields no animation. Effect sheets are sliced under derived
+  `__sheet` / `__anim` keys in `art.js`; do not collapse those back.
+- **Art paths are not uniform.** Sprites live under `assets/sprites/<kind>/`,
+  but VFX and UI live directly under `assets/vfx/` and `assets/ui/`. Use the
+  `*Path()` helpers in `art.js` rather than building paths by hand.
+- **`public/assets` is scanned, not hand-listed.** `scripts/scan-art.mjs` writes
+  `src/art-manifest.js`; the loader only requests files the manifest names. Add
+  art by dropping the file in, never by editing the manifest.
 
 ## Testing notes
 
@@ -87,7 +97,21 @@ playthrough, all bosses, offline PWA boot, and background auto-pause. Screenshot
 pixel checks in this environment are unreliable for WebGL canvases; assert on
 game state instead.
 
+Run it three ways:
+
+```
+npm test                                   # against dist/ at the root base
+E2E_BASE=/veilborn/ node tests/e2e.mjs     # against a subpath build
+E2E_URL=https://<site>/ node tests/e2e.mjs # against a live deployment
+```
+
+The art-wiring section asserts that loaded textures are actually *attached* to
+entities and that effect strips really animate. A texture can load and still be
+unused, which a purely behavioural test cannot see.
+
 ## Licensing
 
-Original IP only. All art is procedural/vector or generated at runtime. Do not
-introduce third-party or proprietary assets.
+Original IP only. The art in `public/assets` is the authored in-house pack from
+the `VEILBORN_GAME_READY_v2` design package (see `docs/ART_GUIDE.md`), which
+supersedes the earlier procedural/vector placeholders. Do not introduce
+third-party or proprietary assets.
