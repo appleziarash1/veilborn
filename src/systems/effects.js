@@ -1,6 +1,25 @@
 // Visual feedback: damage numbers, hit sparks, screen shake, telegraphs.
 import { C, COLOR_HEX } from '../config.js';
 import { makeText } from '../ui.js';
+import { vfxImage } from '../art.js';
+
+// Art-driven hit effects. Each returns false when the art pass has no sheet for
+// it, so the caller keeps its primitive arc/spark. The sheets are 128px frames
+// and are tinted to the damage colour so one sheet serves every realm.
+const VFX_SIZE = { slash: 118, impact: 74, explosion: 190, death_puff: 96 };
+
+function playVfx(scene, id, x, y, opts = {}) {
+  const { color = null, angle = null, size = null, depth = 53, life = null } = opts;
+  const s = vfxImage(scene, id, size || VFX_SIZE[id] || 96);
+  if (!s) return null;
+  s.setPosition(x, y).setDepth(depth);
+  if (angle != null) s.setAngle((angle * 180) / Math.PI);
+  if (color != null) s.setTint(color);
+  if (life != null) {
+    scene.tweens.add({ targets: s, alpha: 0, duration: life, onComplete: () => s.destroy() });
+  }
+  return s;
+}
 
 export class Effects {
   constructor(scene, options) {
@@ -69,6 +88,10 @@ export class Effects {
   }
 
   slashArc(x, y, angle, radius, arc, color, dur = 200) {
+    const art = playVfx(this.scene, 'slash', x, y, {
+      color, angle: angle, size: Math.max(VFX_SIZE.slash, radius * 2.2), life: dur + 160,
+    });
+    if (art) return art;
     const g = this.scene.add.graphics().setDepth(53);
     g.lineStyle(6, color, 0.85);
     g.beginPath();
@@ -76,6 +99,20 @@ export class Effects {
     g.strokePath();
     this.scene.tweens.add({ targets: g, alpha: 0, duration: dur, onComplete: () => g.destroy() });
     return g;
+  }
+
+  // A single impact burst. Used where a hit lands without a full swing.
+  impact(x, y, color, size = VFX_SIZE.impact, life = 260) {
+    return playVfx(this.scene, 'impact', x, y, { color, size, life });
+  }
+
+  // Enemy/boss death. Bigger and slower than a hit.
+  deathPuff(x, y, color, size = VFX_SIZE.death_puff) {
+    return playVfx(this.scene, 'death_puff', x, y, { color, size, life: 420 });
+  }
+
+  explosion(x, y, color, size = VFX_SIZE.explosion) {
+    return playVfx(this.scene, 'explosion', x, y, { color, size, life: 460 });
   }
 
   // Telegraph a damaging zone before it activates.

@@ -91,7 +91,9 @@ export class Player {
     }
     s.hp = Math.max(0, s.hp - remaining);
     if (s.hp <= 0) this.alive = false;
-    return amount;
+    // Report the health actually lost. A hit the barrier ate entirely reads as
+    // zero here, so the caller does not flash a full damage number for it.
+    return remaining;
   }
 
   heal(amount) {

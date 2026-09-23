@@ -1,7 +1,15 @@
 // Reusable UI primitives. Everything is drawn procedurally so the build has no
-// external UI art dependency.
+// external UI art dependency; a complete tile in the art pack overrides the
+// drawn version where one exists (buttons, HUD frame, shard, boon sigils).
 import { C, COLOR_HEX, W, H } from './config.js';
 import { audio } from './audio.js';
+import { uiImage, uiPath } from './art.js';
+
+// A UI art tile if the pack has one, else null so the caller draws its own.
+export function uiArt(scene, id, w, h) {
+  return uiImage(scene, id, w, h);
+}
+export const hasUiArt = (id) => !!uiPath(id);
 
 export function makeText(scene, x, y, str, opts = {}) {
   const {
@@ -67,13 +75,36 @@ export class Button {
     this.label = makeText(scene, x + w / 2, y + h / 2, label, { size, color, origin: 0.5 });
     this.subLabel = null;
 
-    this.rect.on('pointerover', () => { if (this.enabled) this.rect.setFillStyle(hover); });
-    this.rect.on('pointerout', () => { if (this.enabled) this.rect.setFillStyle(fill); });
+    // Optional button art. It sits under the label and follows the same hover
+    // state; the drawn rect stays as the hit area and the no-art fallback.
+    const art = uiImage(scene, 'btn', w, h);
+    if (art) {
+      this.art = art.setPosition(x + w / 2, y + h / 2);
+      const hoverArt = uiImage(scene, 'btn_hover', w, h);
+      if (hoverArt) { this.hoverArt = hoverArt.setPosition(x + w / 2, y + h / 2).setAlpha(0); }
+      this.rect.setFillStyle(fill, 0);
+    }
+
+    const hovered = (on) => {
+      if (this.hoverArt) this.hoverArt.setAlpha(on ? 1 : 0);
+      if (this.art) this.art.setAlpha(on ? 0 : 1);
+    };
+    this.rect.on('pointerover', () => {
+      if (!this.enabled) return;
+      this.rect.setFillStyle(hover, this.art ? 0 : 1);
+      hovered(true);
+    });
+    this.rect.on('pointerout', () => {
+      if (!this.enabled) return;
+      this.rect.setFillStyle(fill, this.art ? 0 : 1);
+      hovered(false);
+    });
     this.rect.on('pointerdown', () => {
       if (!this.enabled) return;
       audio.unlock();
       audio.ui();
-      this.rect.setFillStyle(fill);
+      this.rect.setFillStyle(fill, this.art ? 0 : 1);
+      hovered(false);
       this.onClick();
     });
     this.baseFill = fill;
@@ -109,6 +140,8 @@ export class Button {
     this.rect.destroy();
     this.label.destroy();
     if (this.subLabel) this.subLabel.destroy();
+    if (this.art) this.art.destroy();
+    if (this.hoverArt) this.hoverArt.destroy();
   }
 
   setSub(text) {
@@ -125,16 +158,11 @@ export class Button {
 
   setEnabled(v) {
     this.enabled = v;
-    this.rect.setFillStyle(v ? this.baseFill : 0x1a1725);
+    this.rect.setFillStyle(v ? this.baseFill : 0x1a1725, this.art ? 0 : 1);
     this.label.setAlpha(v ? 1 : 0.45);
     if (this.subLabel) this.subLabel.setAlpha(v ? 1 : 0.35);
+    if (this.art) this.art.setAlpha(v ? 1 : 0.4);
     return this;
-  }
-
-  destroy() {
-    this.rect.destroy();
-    this.label.destroy();
-    if (this.subLabel) this.subLabel.destroy();
   }
 }
 

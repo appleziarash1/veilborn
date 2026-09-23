@@ -8,7 +8,7 @@ import { W, H, C } from '../config.js';
 import { gameState } from '../systems/gamestate.js';
 import { getContent } from '../content.js';
 import { makeText, bar } from '../ui.js';
-import { queueArt } from '../art.js';
+import { queueArt, prepareArt } from '../art.js';
 
 export class Boot extends Phaser.Scene {
   constructor() { super('Boot'); }
@@ -34,6 +34,10 @@ export class Boot extends Phaser.Scene {
     gameState.content = getContent();
     gameState.roomCount = 5;
     gameState.booted = true;
+
+    // Slice the multi-frame effect sheets now so the first hit of a run does not
+    // pay for texture setup mid-combat.
+    prepareArt(this);
 
     if (!gameState.profile.unlockedWeapons || !gameState.profile.unlockedWeapons.length) {
       gameState.profile.unlockedWeapons = ['ashen_edge'];

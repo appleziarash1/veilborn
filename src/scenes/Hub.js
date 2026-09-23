@@ -5,7 +5,7 @@ import { W, H, C } from '../config.js';
 import { audio } from '../audio.js';
 import { gameState } from '../systems/gamestate.js';
 import { makeText, panel, Button, transitionTo } from '../ui.js';
-import { backgroundPath } from '../art.js';
+import { backgroundPath, npcPath } from '../art.js';
 
 const MEMORY_UPGRADES = [
   { key: 'vitality', name: 'Deepened Vitality', desc: '+10 max HP per rank', cost: (r) => 40 + r * 35, max: 8 },
@@ -37,6 +37,15 @@ export class Hub extends Phaser.Scene {
     });
 
     this.shardText = makeText(this, W / 2, 132, '', { size: 19, color: C.gold, origin: 0.5 });
+
+    // The shop keeper watches the Memory panel. Art is optional; the keeper is
+    // simply absent when the pack has no sprite for it.
+    const keeper = npcPath('keeper');
+    if (keeper && this.textures.exists(keeper)) {
+      const img = this.add.image(818, 470, keeper).setDisplaySize(132, 132).setAlpha(0.95);
+      img.setOrigin(0.5, 1);
+      makeText(this, 818, 478, 'THE KEEPER', { size: 12, color: C.muted, origin: 0.5 });
+    }
 
     panel(this, 60, 160, 760, 470, { fill: C.panel, alpha: 0.9 });
     makeText(this, 90, 176, 'MEMORY — permanent upgrades', { size: 20, color: C.purple });

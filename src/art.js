@@ -39,6 +39,68 @@ export const elitePath = (id) => pick(spriteCandidates('elites', slugify(id)));
 export const weaponPath = (id) => pick(spriteCandidates('weapons', slugify(id)));
 export const npcPath = (id) => pick(spriteCandidates('npcs', slugify(id)));
 export const propPath = (id) => pick(spriteCandidates('props', slugify(id)));
+// VFX and UI live directly under assets/, not under assets/sprites/.
+const topCandidates = (folder, name) =>
+  SPRITE_FORMATS.map((ext) => `assets/${folder}/${name}.${ext}`);
+export const vfxPath = (id) => pick(topCandidates('vfx', slugify(id)));
+export const uiPath = (id) => pick(topCandidates('ui', slugify(id)));
+
+// Multi-frame strips ship as one horizontal sheet. The frame counts are fixed by
+// the art pass (docs/ART_GUIDE.md), so they live here rather than being sniffed
+// at runtime — a sheet is only treated as animated when its width matches.
+export const VFX_FRAMES = { slash: 6, impact: 6, explosion: 8, death_puff: 6 };
+
+// Registers a strip's spritesheet and animation under derived keys. Phaser
+// refuses to register a second texture under a key that already exists (it logs
+// an error and returns null), so the sheet cannot be sliced in place under the
+// loaded image's key — hence the separate `__sheet` / `__anim` keys.
+function ensureVfxAnimation(scene, path, id) {
+  const frames = VFX_FRAMES[id];
+  const src = scene.textures.get(path).getSourceImage();
+  if (!frames || !src || src.width !== src.height * frames) return null;
+  const sheetKey = `${path}__sheet`;
+  const animKey = `${path}__anim`;
+  if (!scene.textures.exists(sheetKey)) {
+    scene.textures.addSpriteSheet(sheetKey, src, { frameWidth: src.height, frameHeight: src.height });
+  }
+  if (!scene.anims.exists(animKey)) {
+    scene.anims.create({
+      key: animKey,
+      frames: scene.anims.generateFrameNumbers(sheetKey, { start: 0, end: frames - 1 }),
+      frameRate: 22,
+      hideOnComplete: false,
+    });
+  }
+  return { sheetKey, animKey };
+}
+
+// Slice every effect sheet once, after the loader batch has finished.
+export function prepareArt(scene) {
+  for (const id of VFX_IDS) {
+    const path = vfxPath(id);
+    if (path && scene.textures.exists(path)) ensureVfxAnimation(scene, path, id);
+  }
+}
+
+// VFX sheet loader. Returns a bare Image when the single-frame art is all that
+// exists, so an effect is always visible even with a partial art pass.
+export function vfxImage(scene, id, size) {
+  const path = vfxPath(id);
+  if (!path || !scene.textures.exists(path)) return null;
+  const anim = ensureVfxAnimation(scene, path, id);
+  if (anim) return scene.add.sprite(0, 0, anim.sheetKey).setDisplaySize(size, size).play(anim.animKey);
+  return scene.add.image(0, 0, path).setDisplaySize(size, size);
+}
+
+// Static UI art (buttons, HUD frame, shard, boon sigils). Optional like the
+// rest: callers keep their drawn panel when this returns null.
+export function uiImage(scene, id, w, h) {
+  const path = uiPath(id);
+  if (!path || !scene.textures.exists(path)) return null;
+  const img = scene.add.image(0, 0, path);
+  if (w != null) img.setDisplaySize(w, h == null ? w : h);
+  return img;
+}
 
 // Room prop sprite for the chest / respite / spirit containers. Returns null
 // when the art pass has not produced one, so callers keep their primitives.
@@ -73,7 +135,15 @@ export const PLAYER_POSES = ['idle', 'run', 'dash', 'hurt', 'death'];
 // Spoken NPCs from the dialogue pool. Cael and the Hollow have no portrait in
 // the art pass, so the event room falls back to its text-only line for those.
 export const NPC_IDS = ['mira', 'korrin', 'chronicler'];
+// The Keeper is not a dialogue speaker — it only appears in the Hub — so it is
+// loaded separately and never asked for a portrait.
+export const HUB_NPC_IDS = ['keeper'];
 export const PROP_IDS = ['treasure', 'respite', 'spirit'];
+export const VFX_IDS = ['slash', 'impact', 'explosion', 'death_puff'];
+// Only the UI art that is a complete tile. panel/panel_light/boon_common/
+// boon_legendary in the pack are atlas slivers, not usable panels, so they are
+// deliberately absent — the drawn panels stay in use for those.
+export const UI_IDS = ['btn', 'btn_hover', 'hud_frame', 'shard', 'boon_rare', 'boon_epic'];
 
 // Loader queue keyed by the path itself, which keeps each file loaded once even
 // when two slots share it.
@@ -88,7 +158,10 @@ export function queueArt(scene) {
   for (const id of ELITE_IDS) add(elitePath(id));
   for (const id of WEAPON_IDS) add(weaponPath(id));
   for (const id of NPC_IDS) add(npcPath(id));
+  for (const id of HUB_NPC_IDS) add(npcPath(id));
   for (const id of PROP_IDS) add(propPath(id));
+  for (const id of VFX_IDS) add(vfxPath(id));
+  for (const id of UI_IDS) add(uiPath(id));
 }
 
 // Textures are keyed by path, so these are plain existence checks.

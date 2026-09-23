@@ -365,6 +365,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.effects.damageNumber(entity.x, entity.y - entity.radius, dmg, { crit });
+    this.effects.impact(entity.x, entity.y, crit ? C.gold : C.white,
+      crit ? 96 : 66, crit ? 300 : 200);
     this.effects.spark(entity.x, entity.y, crit ? C.gold : C.white, crit ? 12 : 6, crit ? 260 : 160);
     if (crit) audio.crit(); else audio.hit();
 
@@ -377,6 +379,8 @@ export class GameScene extends Phaser.Scene {
   onKill(entity) {
     const wasBoss = entity === this.boss;
     const x = entity.x; const y = entity.y;
+    if (wasBoss) this.effects.explosion(x, y, entity.color || C.purple, 300);
+    else this.effects.deathPuff(x, y, entity.color || C.purple, 96);
     this.effects.spark(x, y, entity.color || C.purple, wasBoss ? 40 : 14, wasBoss ? 420 : 220);
     this.effects.ring(x, y, wasBoss ? 200 : 60, entity.color || C.purple, wasBoss ? 700 : 320);
     audio.kill();

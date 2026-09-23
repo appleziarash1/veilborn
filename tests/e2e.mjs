@@ -229,6 +229,37 @@ async function main() {
   });
   check('death leads to Death scene', death.includes('Death'), JSON.stringify(death));
 
+  // Barrier damage reporting: a hit fully absorbed by the barrier must report
+  // zero health lost, otherwise the HUD flashes a full damage number for damage
+  // the player never took.
+  console.log('\n== barrier damage reporting ==');
+  const barrier = await page.evaluate(async () => {
+    const { game, gameState } = window.__VEILBORN__;
+    game.scene.getScenes(true).forEach((s) => { if (s.scene.key !== 'Boot') s.scene.stop(); });
+    await new Promise((r) => setTimeout(r, 200));
+    gameState.weapon = null;
+    gameState.startNewRun('ashen_edge', 55);
+    game.scene.start('Game', { mode: 'room' });
+    await new Promise((r) => setTimeout(r, 320));
+    const gs = game.scene.getScene('Game');
+    gs.player.stats.barrier = 500;
+    gs.player.stats.hp = gs.player.stats.maxHp;
+    gs.player.invulnUntil = 0;
+    const hpBefore = gs.player.stats.hp;
+    const fullyAbsorbed = gs.player.hurt(120, gs.time.now);
+    const hpAfterAbsorb = gs.player.stats.hp;
+    // Now exceed the remaining barrier so some health really is lost.
+    gs.player.stats.barrier = 50;
+    gs.player.invulnUntil = 0;
+    const partial = gs.player.hurt(200, gs.time.now);
+    return { fullyAbsorbed, hpBefore, hpAfterAbsorb, partial };
+  });
+  check('a fully absorbed hit reports no health lost',
+    barrier.fullyAbsorbed === 0 && barrier.hpAfterAbsorb === barrier.hpBefore,
+    JSON.stringify(barrier));
+  check('a partly absorbed hit reports only the health lost',
+    barrier.partial === 150, JSON.stringify(barrier));
+
   // --- Hub + memory purchase -------------------------------------------
   console.log('\n== hub / persistence ==');
   const hub = await page.evaluate(async () => {
@@ -395,7 +426,21 @@ async function main() {
       'assets/sprites/npcs/mira.png',
       'assets/sprites/npcs/korrin.png',
       'assets/sprites/npcs/chronicler.png',
+      'assets/sprites/npcs/keeper.png',
+      'assets/sprites/elites/shielded.png',
+      'assets/sprites/elites/frenzied.png',
+      'assets/sprites/elites/volatile.png',
+      'assets/sprites/elites/warded.png',
       'assets/backgrounds/ash.webp',
+      'assets/vfx/slash.png',
+      'assets/vfx/impact.png',
+      'assets/vfx/explosion.png',
+      'assets/vfx/death_puff.png',
+      'assets/ui/btn.png',
+      'assets/ui/btn_hover.png',
+      'assets/ui/hud_frame.png',
+      'assets/ui/shard.png',
+      'assets/ui/boon_rare.png',
     ];
     // Boot has already queued and awaited the art batch.
     const loaded = wanted.filter((p) => game.textures.exists(p));
@@ -417,6 +462,71 @@ async function main() {
   });
   check('art textures are cached after boot', art.loaded === art.wanted,
     `loaded=${art.loaded}/${art.wanted}`);
+
+  // VFX sheets: each multi-frame strip must be sliced into a real animation, not
+  // shown as one squashed image. Boot prepares them, so they must exist before
+  // any effect fires. This is the failure Phaser's key-collision rule produced
+  // silently, so it is asserted directly.
+  const vfx = await page.evaluate(async () => {
+    const { game, gameState } = window.__VEILBORN__;
+    gameState.weapon = null;
+    gameState.startNewRun('ashen_edge', 91);
+    game.scene.start('Game', { mode: 'room' });
+    await new Promise((r) => setTimeout(r, 400));
+    const gs = game.scene.getScene('Game');
+    const keys = {};
+    for (const id of ['slash', 'impact', 'explosion', 'death_puff']) {
+      const sheet = `assets/vfx/${id}.png__sheet`;
+      const anim = `assets/vfx/${id}.png__anim`;
+      keys[id] = {
+        anim: game.anims.exists(anim),
+        frames: game.textures.exists(sheet) ? game.textures.get(sheet).frameTotal - 1 : 0,
+      };
+    }
+    // Fire every effect through the real code path, then count the live VFX
+    // objects. Each must be a Sprite running its animation, not a flat image.
+    gs.effects.slashArc(640, 360, 0, 100, 1.1, 0xffffff, 180);
+    gs.effects.impact(640, 360, 0xff0000, 66, 200);
+    gs.effects.deathPuff(640, 360, 0x9c6cff, 96);
+    gs.effects.explosion(640, 360, 0x9c6cff, 300);
+    const vfxObjs = gs.children.list.filter((o) => o.texture
+      && String(o.texture.key).startsWith('assets/vfx/'));
+    return {
+      keys,
+      live: vfxObjs.length,
+      animated: vfxObjs.filter((o) => o.anims && o.anims.isPlaying).length,
+    };
+  });
+  const expectedFrames = { slash: 6, impact: 6, explosion: 8, death_puff: 6 };
+  for (const [id, r] of Object.entries(vfx.keys)) {
+    check(`${id} vfx is prepared as a ${expectedFrames[id]}-frame animation`,
+      r.anim && r.frames === expectedFrames[id], JSON.stringify(r));
+  }
+  check('vfx objects are created by real effect calls', vfx.live >= 4, `live=${vfx.live}`);
+  check('every vfx object is playing its animation', vfx.animated === vfx.live,
+    `animated=${vfx.animated}/${vfx.live}`);
+
+  // Button art: the drawn rect stays as the hit area, and the art tiles attach
+  // on top. Hover must swap the two art tiles rather than only recolour.
+  const uiArt = await page.evaluate(async () => {
+    const { game } = window.__VEILBORN__;
+    game.scene.start('Menu');
+    await new Promise((r) => setTimeout(r, 250));
+    const menu = game.scene.getScene('Menu');
+    const btn = (menu.buttons || [])[0];
+    if (!btn) return { none: true };
+    const before = { art: btn.art ? btn.art.alpha : null, hover: btn.hoverArt ? btn.hoverArt.alpha : null };
+    btn.rect.emit('pointerover');
+    const over = { art: btn.art ? btn.art.alpha : null, hover: btn.hoverArt ? btn.hoverArt.alpha : null };
+    btn.rect.emit('pointerout');
+    const out = { art: btn.art ? btn.art.alpha : null, hover: btn.hoverArt ? btn.hoverArt.alpha : null };
+    return { hasArt: !!(btn.art && btn.hoverArt), before, over, out };
+  });
+  check('buttons render the art tile', uiArt.hasArt, JSON.stringify(uiArt));
+  check('button hover swaps the art tiles',
+    uiArt.over && uiArt.over.hover === 1 && uiArt.over.art === 0
+    && uiArt.out && uiArt.out.hover === 0 && uiArt.out.art === 1, JSON.stringify(uiArt));
+
   check('player renders as a sprite, not a primitive', art.playerUsesImage);
   check('enemy renders as a sprite, not a primitive', art.enemyUsesImage,
     `texture=${art.enemyTexture}`);
@@ -454,6 +564,34 @@ async function main() {
     check(`${type.toLowerCase()} room uses its prop sprite`,
       r.roomType === type && r.texture === r.expected, JSON.stringify(r));
   }
+
+  // Elite aura: an Elite room spawns a modified enemy. The aura overlay must
+  // attach to that enemy while the body stays the base archetype sprite.
+  const eliteArt = await page.evaluate(async () => {
+    const { game, gameState } = window.__VEILBORN__;
+    gameState.weapon = null;
+    gameState.startNewRun('ashen_edge', 33);
+    gameState.rooms[1] = { ...gameState.rooms[1], type: 'Elite' };
+    gameState.run.room = 1;
+    game.scene.start('Game', { mode: 'room' });
+    await new Promise((r) => setTimeout(r, 400));
+    const gs = game.scene.getScene('Game');
+    const elite = (gs.enemies || []).find((e) => e.elite);
+    if (!elite) return { none: true, roomType: gs.roomType };
+    return {
+      roomType: gs.roomType,
+      eliteId: elite.elite.id,
+      auraTexture: elite.aura ? elite.aura.texture.key : null,
+      expected: `assets/sprites/elites/${elite.elite.id}.png`,
+      bodyTexture: elite.sprite ? elite.sprite.texture.key : null,
+    };
+  });
+  check('elite room spawns an elite with aura art',
+    !eliteArt.none && eliteArt.auraTexture === eliteArt.expected,
+    JSON.stringify(eliteArt));
+  check('elite body keeps the base archetype sprite',
+    !!eliteArt.bodyTexture && !String(eliteArt.bodyTexture).includes('/elites/'),
+    JSON.stringify(eliteArt));
 
   // Speaker portraits: the event room shows one only for a speaker the art pass
   // actually drew, and falls back to the centred text line for the rest.

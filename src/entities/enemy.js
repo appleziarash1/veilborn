@@ -4,7 +4,7 @@
 // without needing ten hand-written AI trees.
 import { ARENA } from '../config.js';
 import { ELITE_MODS } from '../world/rooms.js';
-import { enemyPath, tintBody } from '../art.js';
+import { enemyPath, elitePath, tintBody } from '../art.js';
 
 export class Enemy {
   constructor(scene, x, y, archetype, opts = {}) {
@@ -62,6 +62,15 @@ export class Enemy {
     if (this.elite) {
       this.hpBar = scene.add.graphics().setDepth(29);
       this.drawHpBar();
+      // Elite aura art frames the archetype sprite. It is a cosmetic overlay, so
+      // it never touches the body shape or the collision radius.
+      const aura = elitePath(this.elite.id);
+      if (aura && scene.textures.exists(aura)) {
+        this.aura = scene.add.image(0, 0, aura)
+          .setDisplaySize(this.radius * 3.4, this.radius * 3.4)
+          .setAlpha(0.85);
+        this.container.addAt(this.aura, 1);
+      }
     }
     if (this.maxShield > 0) {
       this.shieldRing = scene.add.circle(x, y, this.radius + 5, undefined, 0)
