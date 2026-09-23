@@ -15,6 +15,7 @@ const BASE = (process.env.E2E_BASE || '/').replace(/\/?$/, '/');
 const MIME = {
   '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.css': 'text/css',
+  '.webp': 'image/webp',
   '.webmanifest': 'application/manifest+json',
 };
 
@@ -109,6 +110,8 @@ async function main() {
       const sceneNames = [];
       const roomsSeen = [];
       const bossNames = [];
+      const bossArtKeys = [];
+      const realmIds = [];
 
       // Walk rooms 0..4 by restarting the Game scene, running a few frames,
       // then force-clearing combat rooms so progression is exercised.
@@ -125,7 +128,13 @@ async function main() {
         if (!g) { sceneNames.push('missing'); continue; }
         sceneNames.push(g.scene.key);
         roomsSeen.push(g.roomType);
-        if (g.boss) bossNames.push(g.boss.name);
+        if (g.boss) {
+          bossNames.push(g.boss.name);
+          // Record which texture the boss actually attached, so a silent art
+          // fallback to the primitive cannot pass unnoticed.
+          bossArtKeys.push(g.boss.sprite ? g.boss.sprite.texture.key : 'primitive');
+        }
+        realmIds.push(g.arena && g.arena.bgPath ? g.arena.bgPath : 'primitive');
 
         // Exercise real combat: attack, special, dash, then clear.
         if (g.player) {
@@ -146,12 +155,18 @@ async function main() {
       }
 
       window.removeEventListener('error', onErr);
-      return { errors, sceneNames, roomsSeen, bossNames };
+      return { errors, sceneNames, roomsSeen, bossNames, bossArtKeys, realmIds };
     }, realm);
 
     check(`realm ${realm}: all 5 rooms loaded`, result.sceneNames.every((s) => s === 'Game'), JSON.stringify(result.sceneNames));
     check(`realm ${realm}: boss room present`, result.roomsSeen.includes('Boss'), JSON.stringify(result.roomsSeen));
     check(`realm ${realm}: boss spawned`, result.bossNames.length > 0, JSON.stringify(result.bossNames));
+    check(`realm ${realm}: boss renders its own sprite`,
+      result.bossArtKeys.length > 0 && result.bossArtKeys.every((k) => k !== 'primitive'),
+      JSON.stringify(result.bossArtKeys));
+    check(`realm ${realm}: arena uses a painted backdrop`,
+      result.realmIds.every((p) => /^assets\/backgrounds\/.*\.webp$/.test(p)),
+      JSON.stringify([...new Set(result.realmIds)]));
     check(`realm ${realm}: no scene errors`, result.errors.length === 0, JSON.stringify(result.errors));
   }
 
@@ -251,6 +266,226 @@ async function main() {
     return m ? m.getAttribute('content') : null;
   });
   check('viewport meta present', !!viewportMeta, String(viewportMeta));
+
+  // --- iPhone PWA contract ---------------------------------------------
+  // These are the tags iOS reads when the game is added to the Home Screen.
+  // Getting one wrong is invisible in a desktop browser but produces a white
+  // splash, a status bar over the HUD, or a squashed canvas on a real phone.
+  console.log('\n== iPhone PWA contract ==');
+  const ios = await page.evaluate(() => {
+    const meta = (n) => {
+      const el = document.querySelector(`meta[name="${n}"]`);
+      return el ? el.getAttribute('content') : null;
+    };
+    const splashes = [...document.querySelectorAll('link[rel="apple-touch-startup-image"]')]
+      .map((l) => l.getAttribute('href'));
+    const mf = document.querySelector('link[rel="manifest"]');
+    return {
+      capable: meta('apple-mobile-web-app-capable'),
+      statusBar: meta('apple-mobile-web-app-status-bar-style'),
+      title: meta('apple-mobile-web-app-title'),
+      viewportFit: /viewport-fit=cover/.test(meta('viewport') || ''),
+      userScalable: /user-scalable=no/.test(meta('viewport') || ''),
+      splashes: splashes.length,
+      touchIcon: (document.querySelector('link[rel="apple-touch-icon"]') || {}).href || null,
+      manifestHref: mf ? mf.getAttribute('href') : null,
+    };
+  });
+  check('ios standalone capable', ios.capable === 'yes', String(ios.capable));
+  check('ios status bar is translucent', ios.statusBar === 'black-translucent', String(ios.statusBar));
+  check('ios home-screen title set', ios.title === 'Veilborn', String(ios.title));
+  check('viewport respects the notch (viewport-fit=cover)', ios.viewportFit);
+  check('viewport blocks pinch zoom', ios.userScalable);
+  check('ios launch screens declared', ios.splashes >= 4, `count=${ios.splashes}`);
+
+  // The manifest must force landscape: the arena is a 16:9 field and a portrait
+  // phone would letterbox it into an unplayable strip.
+  const mf = await page.evaluate(async () => {
+    const link = document.querySelector('link[rel="manifest"]');
+    const res = await fetch(link.getAttribute('href'));
+    return res.ok ? res.json() : null;
+  });
+  check('manifest forces landscape orientation', mf && mf.orientation === 'landscape',
+    String(mf && mf.orientation));
+  check('manifest is installable (standalone + fullscreen override)',
+    !!mf && mf.display === 'standalone' && (mf.display_override || []).includes('fullscreen'),
+    JSON.stringify(mf && { display: mf.display, over: mf.display_override }));
+  check('manifest ships a maskable icon',
+    !!mf && (mf.icons || []).some((i) => String(i.purpose).includes('maskable')),
+    JSON.stringify(mf && mf.icons));
+
+  // Safe-area insets: without these the HUD sits under the notch and the home
+  // indicator covers the touch controls.
+  const safeArea = await page.evaluate(() => {
+    const cs = getComputedStyle(document.getElementById('game'));
+    return cs.paddingTop !== undefined && getComputedStyle(document.body).overflow === 'hidden';
+  });
+  check('game container is locked to the viewport', safeArea);
+
+  // --- rotate prompt ----------------------------------------------------
+  // A real iPhone context, because the overlay is touch-gated: a narrow desktop
+  // window must NOT show it, and a portrait phone must.
+  console.log('\n== rotate prompt ==');
+  const phone = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true, isMobile: true, deviceScaleFactor: 3,
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+  });
+  const phonePage = await phone.newPage();
+  await phonePage.goto(origin, { waitUntil: 'load' });
+  await phonePage.waitForFunction(() => window.__VEILBORN__ && window.__VEILBORN__.gameState.booted, null, { timeout: 20000 });
+  const shownPortrait = await phonePage.evaluate(() =>
+    document.getElementById('rotate').classList.contains('show'));
+  check('portrait phone shows the rotate prompt', shownPortrait);
+
+  // Rotating to landscape must hide it again without a reload.
+  await phonePage.setViewportSize({ width: 844, height: 390 });
+  await sleep(400);
+  const hiddenLandscape = await phonePage.evaluate(() =>
+    document.getElementById('rotate').classList.contains('show'));
+  check('landscape phone hides the rotate prompt', !hiddenLandscape);
+
+  // Back to portrait: it must come back.
+  await phonePage.setViewportSize({ width: 390, height: 844 });
+  await sleep(400);
+  const shownAgain = await phonePage.evaluate(() =>
+    document.getElementById('rotate').classList.contains('show'));
+  check('rotate prompt returns on rotating back', shownAgain);
+  await phone.close();
+
+  // Desktop (already 1280x720, no touch) must never see the overlay.
+  const desktopShows = await page.evaluate(() =>
+    document.getElementById('rotate').classList.contains('show'));
+  check('desktop never shows the rotate prompt', !desktopShows);
+
+  // --- Art wiring -------------------------------------------------------
+  // The art layer is optional by design, so a silent failure is possible: the
+  // manifest could list a file the loader never requests, a referenced file
+  // could be absent from the build, or a texture could load and still not be
+  // attached to an entity. All three are invisible to a behavioural test.
+  console.log('\n== art wiring ==');
+
+  // Node side: the manifest is a plain module, and the files it names must ship.
+  const manifestSrc = await readFile(join(ROOT, '..', 'src', 'art-manifest.js'), 'utf8');
+  const manifestPaths = [...manifestSrc.matchAll(/"(assets\/[^"]+)"/g)].map((m) => m[1]);
+  const spritesInManifest = manifestPaths.filter((p) => p.includes('/sprites/'));
+  const bgsInManifest = manifestPaths.filter((p) => p.includes('/backgrounds/'));
+  check('art manifest lists every sprite slot', spritesInManifest.length >= 29,
+    `sprites=${spritesInManifest.length}`);
+  check('art manifest lists every background', bgsInManifest.length >= 6,
+    `backgrounds=${bgsInManifest.length}`);
+  const absentFromBuild = [];
+  for (const p of manifestPaths) {
+    try { await readFile(join(ROOT, p)); } catch { absentFromBuild.push(p); }
+  }
+  check('every manifest path exists in the build', absentFromBuild.length === 0,
+    JSON.stringify(absentFromBuild.slice(0, 5)));
+
+  // Page side: Boot queues the art, so by the menu it must be in the cache and
+  // attached to real entities.
+  const art = await page.evaluate(async () => {
+    const { game, gameState } = window.__VEILBORN__;
+    const wanted = [
+      'assets/sprites/player/cael_idle.png',
+      'assets/sprites/enemies/shade_wraith.png',
+      'assets/sprites/bosses/zyther.png',
+      'assets/sprites/props/treasure.png',
+      'assets/sprites/props/respite.png',
+      'assets/sprites/props/spirit.png',
+      'assets/sprites/npcs/mira.png',
+      'assets/sprites/npcs/korrin.png',
+      'assets/sprites/npcs/chronicler.png',
+      'assets/backgrounds/ash.webp',
+    ];
+    // Boot has already queued and awaited the art batch.
+    const loaded = wanted.filter((p) => game.textures.exists(p));
+
+    gameState.weapon = null;
+    gameState.startNewRun('ashen_edge', 11);
+    game.scene.start('Game', { mode: 'room' });
+    await new Promise((r) => setTimeout(r, 450));
+    const gs = game.scene.getScene('Game');
+    const enemy = (gs.enemies || []).find((e) => e.sprite);
+    return {
+      loaded: loaded.length,
+      wanted: wanted.length,
+      playerUsesImage: !!(gs.player && gs.player.sprite),
+      enemyUsesImage: !!enemy,
+      enemyTexture: enemy ? enemy.sprite.texture.key : null,
+      arenaHasBg: !!(gs.arena && gs.arena.graphics),
+    };
+  });
+  check('art textures are cached after boot', art.loaded === art.wanted,
+    `loaded=${art.loaded}/${art.wanted}`);
+  check('player renders as a sprite, not a primitive', art.playerUsesImage);
+  check('enemy renders as a sprite, not a primitive', art.enemyUsesImage,
+    `texture=${art.enemyTexture}`);
+
+  // Room props: the chest, the respite shrine and the bound spirit are the only
+  // non-entity art in a chamber. Force each room type and confirm the sprite
+  // attached rather than the primitive fallback.
+  const propArt = await page.evaluate(async () => {
+    const { game, gameState } = window.__VEILBORN__;
+    const out = {};
+    const cases = [
+      ['Treasure', 'chestBody', 'assets/sprites/props/treasure.png'],
+      ['Rest', 'healIcon', 'assets/sprites/props/respite.png'],
+      ['Event', 'chestBody', 'assets/sprites/props/spirit.png'],
+    ];
+    for (const [type, field, path] of cases) {
+      gameState.weapon = null;
+      gameState.startNewRun('ashen_edge', 77);
+      // Pin the room under test, then start it for real.
+      gameState.rooms[1] = { ...gameState.rooms[1], type };
+      gameState.run.room = 1;
+      game.scene.start('Game', { mode: 'room' });
+      await new Promise((r) => setTimeout(r, 320));
+      const gs = game.scene.getScene('Game');
+      const obj = gs[field];
+      out[type] = {
+        roomType: gs.roomType,
+        texture: obj && obj.texture ? obj.texture.key : 'primitive',
+        expected: path,
+      };
+    }
+    return out;
+  });
+  for (const [type, r] of Object.entries(propArt)) {
+    check(`${type.toLowerCase()} room uses its prop sprite`,
+      r.roomType === type && r.texture === r.expected, JSON.stringify(r));
+  }
+
+  // Speaker portraits: the event room shows one only for a speaker the art pass
+  // actually drew, and falls back to the centred text line for the rest.
+  const portraits = await page.evaluate(async () => {
+    const { game, gameState } = window.__VEILBORN__;
+    const withArt = [];
+    const withoutArt = [];
+    // Every speaker in the dialogue pool, so a new one cannot be added without
+    // either art or an explicit fallback decision.
+    for (const speaker of ['Mira', 'Korrin', 'Chronicler', 'Cael', 'Hollow']) {
+      gameState.weapon = null;
+      gameState.startNewRun('ashen_edge', 5);
+      gameState.rooms[1] = { ...gameState.rooms[1], type: 'Event' };
+      gameState.run.room = 1;
+      // Pin the line the room will draw, so the speaker under test is the one
+      // rendered rather than a random pick from the pool.
+      gameState.content = { ...(gameState.content || {}), dialogue: [{ speaker, text: 'x' }] };
+      game.scene.start('Game', { mode: 'room' });
+      await new Promise((r) => setTimeout(r, 300));
+      const gs = game.scene.getScene('Game');
+      const p = gs.memoryPortrait;
+      if (p && p.texture) withArt.push(`${speaker}:${p.texture.key}`);
+      else withoutArt.push(speaker);
+    }
+    return { withArt, withoutArt };
+  });
+  check('drawn speakers show a portrait',
+    portraits.withArt.length === 3 && portraits.withArt.every((s) => s.includes('/npcs/')),
+    JSON.stringify(portraits.withArt));
+  check('undrawn speakers fall back to text only',
+    JSON.stringify(portraits.withoutArt) === JSON.stringify(['Cael', 'Hollow']),
+    JSON.stringify(portraits.withoutArt));
 
   // --- Full playthrough: realm 1 room 1 -> final ending -----------------
   // Drives the *real* progression chain (room clear -> reward -> boon ->
@@ -376,6 +611,17 @@ async function main() {
     null, { timeout: 20000 },
   ).then(() => true).catch(() => false);
   check('game boots offline from cache', offBoot === true, 'boot timed out');
+
+  // Art is fetched by the loader rather than referenced from index.html, so it
+  // is reachable in the precache only if the SW read art-index.json. Confirm a
+  // sprite is genuinely there, not merely that the game booted.
+  const offArt = await offPage.evaluate(async () => {
+    const { game } = window.__VEILBORN__;
+    const wanted = ['assets/sprites/player/cael_idle.png', 'assets/backgrounds/ash.webp'];
+    return wanted.filter((p) => game.textures.exists(p)).length;
+  });
+  check('sprites are precached for a cold offline start', offArt === 2, `cached=${offArt}`);
+
   check('no page errors while offline', offErrors.length === 0, JSON.stringify(offErrors.slice(0, 3)));
   await offlineContext.setOffline(false);
   await offlineContext.close();

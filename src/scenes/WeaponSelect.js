@@ -6,6 +6,7 @@ import { audio } from '../audio.js';
 import { gameState } from '../systems/gamestate.js';
 import { WEAPONS } from '../content.js';
 import { makeText, panel, Button, transitionTo } from '../ui.js';
+import { weaponIcon } from '../art.js';
 
 export class WeaponSelect extends Phaser.Scene {
   constructor() { super('WeaponSelect'); }
@@ -59,11 +60,18 @@ export class WeaponSelect extends Phaser.Scene {
     const lore = makeText(this, x + 18, y + 70, wp.lore, { size: 14, color: C.muted, wrap: w - 36 });
     const spec = makeText(this, x + 18, y + 130, `${wp.special}: ${wp.specialDesc}`, { size: 13, color: C.purple, wrap: w - 36 });
     const swatch = this.add.rectangle(x + w - 26, y + h - 24, 26, 8, wp.color).setOrigin(1, 0.5);
+    // Card art when the art pass has produced it; the swatch stays as the
+    // fallback and keeps the card readable either way.
+    const icon = weaponIcon(this, wp.id, 72);
+    if (icon) {
+      icon.setPosition(x + w - 52, y + 52);
+      swatch.setVisible(false);
+    }
     const hit = this.add.rectangle(x + w / 2, y + h / 2, w, h, 0xffffff, 0)
       .setInteractive({ useHandCursor: true });
     hit.on('pointerdown', () => { audio.unlock(); this.select(i); });
     hit.on('pointerover', () => { if (this.selected !== i) bg.setAlpha(0.98); });
-    this.cards[i] = { bg, name, kind, lore, spec, swatch, hit, x, y, w, h };
+    this.cards[i] = { bg, name, kind, lore, spec, swatch, icon, hit, x, y, w, h };
   }
 
   select(i) {

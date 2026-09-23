@@ -17,6 +17,7 @@ import { Arena } from '../world/arena.js';
 import { buildAttack, buildSpecial, coneHits, rollCrit } from '../systems/combat.js';
 import { enemyArchetype, ELITE_MODS, roomBudget, rollBoonChoices, rarityColor } from '../world/rooms.js';
 import { makeText, panel, Button, transitionTo } from '../ui.js';
+import { npcPath, propImage } from '../art.js';
 import { onVisibilityChange } from '../pwa.js';
 
 const ROOM_LABELS = {
@@ -174,7 +175,8 @@ export class GameScene extends Phaser.Scene {
   spawnTreasureRoom() {
     // A chest to walk into; opening it grants a boon choice.
     this.chest = this.add.container(W / 2, ARENA.y + ARENA.h / 2).setDepth(25);
-    this.chestBody = this.add.rectangle(0, 0, 54, 40, 0xf1c75b).setStrokeStyle(3, 0xfff2c8);
+    this.chestBody = propImage(this, 'treasure', 96)
+      || this.add.rectangle(0, 0, 54, 40, 0xf1c75b).setStrokeStyle(3, 0xfff2c8);
     this.chestGlow = this.add.circle(0, 0, 52, 0xf1c75b, 0.18);
     this.chest.add([this.chestGlow, this.chestBody]);
     this.tweens.add({ targets: this.chestGlow, scale: 1.25, alpha: 0.08, duration: 900, yoyo: true, repeat: -1 });
@@ -184,6 +186,9 @@ export class GameScene extends Phaser.Scene {
   spawnRestRoom() {
     this.healPool = this.add.circle(W / 2, ARENA.y + ARENA.h / 2, 70, C.green, 0.16)
       .setStrokeStyle(3, C.green, 0.6).setDepth(20);
+    // The sprite sits over the pool so the room reads as a shrine, not a blob.
+    this.healIcon = propImage(this, 'respite', 76);
+    if (this.healIcon) this.healIcon.setPosition(W / 2, ARENA.y + ARENA.h / 2).setDepth(21);
     this.tweens.add({ targets: this.healPool, scale: 1.12, duration: 1100, yoyo: true, repeat: -1 });
     this.prompt = makeText(this, W / 2, ARENA.y + ARENA.h / 2 + 96, 'Stand in the Respite to heal', { size: 16, color: C.green, origin: 0.5 });
   }
@@ -198,14 +203,25 @@ export class GameScene extends Phaser.Scene {
     // choice that makes the True Ending earnable rather than accidental.
     this.freedSpirit = this.add.container(W / 2, ARENA.y + ARENA.h / 2).setDepth(25);
     this.pickupGlow = this.add.circle(0, 0, 54, C.purple, 0.18).setStrokeStyle(3, C.purple, 0.6);
-    this.chestBody = this.add.circle(0, 0, 20, 0xd9c9ff, 0.85);
+    this.chestBody = propImage(this, 'spirit', 84) || this.add.circle(0, 0, 20, 0xd9c9ff, 0.85);
     this.shardPile = this.freedSpirit;
     this.freedSpirit.add([this.pickupGlow, this.chestBody]);
     this.tweens.add({ targets: this.pickupGlow, scale: 1.2, alpha: 0.08, duration: 1000, yoyo: true, repeat: -1 });
 
-    this.memoryLine = makeText(this, W / 2, ARENA.y + 80, `${line.speaker || 'Memory'}: "${line.text}"`, {
-      size: 17, color: C.muted, origin: 0.5, wrap: 820, align: 'center',
-    });
+    // Speaker portrait, when the art pass has one for them. Cael and the Hollow
+    // have none, so the line stays text-only rather than showing a blank frame.
+    const portrait = npcPath(line.speaker);
+    if (portrait && this.textures.exists(portrait)) {
+      this.memoryPortrait = this.add.image(W / 2 - 300, ARENA.y + 96, portrait)
+        .setDisplaySize(104, 104).setDepth(26).setAlpha(0.95);
+      this.memoryLine = makeText(this, W / 2 + 30, ARENA.y + 80, `${line.speaker || 'Memory'}: "${line.text}"`, {
+        size: 17, color: C.muted, origin: 0.5, wrap: 560, align: 'left',
+      });
+    } else {
+      this.memoryLine = makeText(this, W / 2, ARENA.y + 80, `${line.speaker || 'Memory'}: "${line.text}"`, {
+        size: 17, color: C.muted, origin: 0.5, wrap: 820, align: 'center',
+      });
+    }
     this.prompt = makeText(this, W / 2, ARENA.y + ARENA.h - 40, 'Walk into the spirit to face it', {
       size: 16, color: C.purple, origin: 0.5,
     });
@@ -255,8 +271,10 @@ export class GameScene extends Phaser.Scene {
     if (this.chest) { this.chest.destroy(); this.chest = null; }
     if (this.shardPile) { this.shardPile.destroy(); this.shardPile = null; }
     if (this.healPool) { this.healPool.destroy(); this.healPool = null; }
+    if (this.healIcon) { this.healIcon.destroy(); this.healIcon = null; }
     if (this.prompt) { this.prompt.destroy(); this.prompt = null; }
     if (this.memoryLine) { this.memoryLine.destroy(); this.memoryLine = null; }
+    if (this.memoryPortrait) { this.memoryPortrait.destroy(); this.memoryPortrait = null; }
     if (this.freedSpirit) { this.freedSpirit.destroy(); this.freedSpirit = null; }
     this.slowFields.forEach((f) => f.destroy());
     this.slowFields = [];

@@ -53,10 +53,43 @@
       position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
       color: #aaa4bd; font-family: Georgia, serif; font-size: 16px; pointer-events: none;
     }
+
+    /* Rotate prompt. The arena is a 16:9 field, so a portrait phone would
+       letterbox it into an unplayable strip. Shown only on touch devices in
+       portrait (see pwa.js), and never on desktop where the window is wide. */
+    #rotate {
+      position: fixed; inset: 0; z-index: 50; display: none;
+      flex-direction: column; align-items: center; justify-content: center; gap: 26px;
+      background: radial-gradient(circle at 50% 40%, #1a1430 0%, #090a10 70%);
+      color: #e8e2f5; font-family: Georgia, serif; text-align: center;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      box-sizing: border-box;
+    }
+    #rotate.show { display: flex; }
+    #rotate svg { width: 96px; height: 96px; animation: tilt 2.2s ease-in-out infinite; }
+    #rotate .title { font-size: 22px; letter-spacing: 0.14em; }
+    #rotate .hint { font-size: 15px; color: #aaa4bd; max-width: 260px; line-height: 1.5; }
+    @keyframes tilt {
+      0%, 45% { transform: rotate(0deg); }
+      70%, 100% { transform: rotate(-90deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #rotate svg { animation: none; transform: rotate(-90deg); }
+    }
   </style>
 </head>
 <body>
   <div id="game"></div>
+  <div id="rotate" role="status" aria-live="polite">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+      <rect x="7" y="2" width="10" height="20" rx="2" />
+      <line x1="10.5" y1="19" x2="13.5" y2="19" stroke-linecap="round" />
+      <path d="M4 8a9 9 0 0 1 2-4" stroke-linecap="round" />
+      <path d="M2.6 6.2 4 8l1.9-1.2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+    <div class="title">ROTATE YOUR PHONE</div>
+    <div class="hint">VEILBORN plays in landscape. Turn your device sideways to enter the Veil.</div>
+  </div>
   <div id="boot-notice">VEILBORN</div>
   <script type="module" src="/src/main.js"></script>
 </body>

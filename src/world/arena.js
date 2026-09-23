@@ -16,6 +16,7 @@ export class Arena {
     // Background image, if art exists for this realm. Keyed by path so the
     // texture name always matches what the loader queued.
     const bgPath = backgroundPath(realm.id);
+    this.bgPath = bgPath || null;
     if (bgPath && scene.textures.exists(bgPath)) {
       const img = scene.add.image(W / 2, H / 2, bgPath);
       const scale = Math.max(W / img.width, H / img.height);

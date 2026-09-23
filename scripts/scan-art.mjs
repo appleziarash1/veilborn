@@ -9,6 +9,7 @@ import { join, relative, sep } from 'node:path';
 
 const ASSET_ROOT = 'public/assets';
 const OUT = 'src/art-manifest.js';
+const INDEX = 'public/art-index.json';
 
 function walk(dir, acc = []) {
   let entries;
@@ -34,6 +35,9 @@ export function scanArt() {
 export const ART_FILES = new Set(${JSON.stringify(paths, null, 2)});
 `;
   writeFileSync(OUT, body);
+  // The service worker cannot see src/, and it must precache the art for a
+  // first-launch-offline start, so publish the same list as a static file.
+  writeFileSync(INDEX, `${JSON.stringify(paths, null, 2)}\n`);
   return paths;
 }
 

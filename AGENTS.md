@@ -31,9 +31,19 @@ Entities render as Phaser primitives so the game is playable with no art
 installed. Dropping a correctly named file into `public/assets/` makes that
 entity use the sprite instead, with no code change.
 
-- `scripts/scan-art.mjs` walks `public/assets/` and writes `src/art-manifest.js`.
-  `npm run build` and `npm run dev` run it first. **Run `npm run art` after
-  adding or removing art**, or the new file will not be requested.
+Source crops live in `art-source/veilborn-package/` (committed). Regenerate the
+runtime sprites with `python3 scripts/extract-sprites.py`; it reads `SRC` from
+`$VEILBORN_ART_SRC` and writes `public/assets/sprites/<folder>/<slot>.png`.
+
+- `scripts/scan-art.mjs` walks `public/assets/` and writes `src/art-manifest.js`
+  **and** `public/art-index.json`. `npm run build` and `npm run dev` run it
+  first. **Run `npm run art` after adding or removing art**, or the new file
+  will not be requested.
+- `public/art-index.json` exists because the service worker cannot read `src/`.
+  The SW fetches it during install and precaches every listed file, which is
+  what makes a first-launch-offline start have art. If you add a new asset
+  folder, it is covered automatically; only a new *format* needs the regex in
+  `public/sw.js` extended.
 - `src/art.js` resolves slots to paths. Only files in the manifest are
   requested, so a partly finished art pass produces no 404s.
 - Sprites replace visuals only: radii and hitboxes stay config-driven.
@@ -42,6 +52,20 @@ entity use the sprite instead, with no code change.
 - The filename contract is `docs/ART_GUIDE.md`. `art-kit/` holds the
   contributor-facing copy; `scripts/build-art-kit.mjs` publishes it plus
   `veilborn-art-kit.zip` to `public/art-kit/` for download from the live site.
+- **Any new scene object must be destroyed in `clearEntities()`.** Missing one
+  leaks it across rooms: `healIcon` and `memoryPortrait` were both added without
+  a destroy and survived into the next chamber. The e2e suite catches this by
+  forcing each room type and asserting the *attached texture*, not just that the
+  sprite exists.
+
+## iOS / PWA
+
+- `public/manifest.webmanifest` forces `orientation: landscape`; the arena is
+  16:9 and a portrait phone letterboxes it into a strip.
+- `#rotate` in `index.html` is the in-page fallback, because iOS ignores the
+  manifest orientation for a browser tab and when rotating back. `src/pwa.js`
+  shows it only when portrait **and** touch **and** narrow, so a small desktop
+  window is unaffected.
 
 ## Things that bite
 

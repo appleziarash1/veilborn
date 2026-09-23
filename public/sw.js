@@ -9,7 +9,7 @@
 const SCOPE = self.registration.scope;
 const BASE = new URL(SCOPE).pathname.replace(/\/$/, '');
 const at = (p) => `${BASE}${p.startsWith('/') ? p : `/${p}`}`;
-const VERSION = 'veilborn-v1';
+const VERSION = 'veilborn-v2';
 const SHELL = [
   at('/'),
   at('/index.html'),
@@ -36,9 +36,19 @@ self.addEventListener('install', (event) => {
         if (u.startsWith('./')) u = u.slice(1);
         if (!u.startsWith('/')) continue;
         if (u.endsWith('/sw.js')) continue;
-        if (/\.(js|css|svg|png|webmanifest|woff2?)$/.test(u)) urls.add(u);
+        if (/\.(js|css|svg|png|webp|webmanifest|woff2?)$/.test(u)) urls.add(u);
       }
       await Promise.all([...urls].map((u) => cache.add(u).catch(() => {})));
+
+      // Art is not referenced from index.html (the loader fetches it at boot),
+      // so read the published index and precache every sprite and backdrop.
+      // Without this the first offline launch has no art at all.
+      try {
+        const list = await (await fetch(at('/art-index.json'), { cache: 'no-store' })).json();
+        await Promise.all(list.map((u) => cache.add(at(u)).catch(() => {})));
+      } catch (e) {
+        console.warn('[VEILBORN] art precache skipped', e);
+      }
     } catch {
       // Offline at install time: the runtime cache will fill in later.
     }

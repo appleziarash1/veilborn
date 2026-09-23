@@ -89,11 +89,28 @@ export function initPwa() {
     });
   }
 
+  // --- rotate-to-landscape prompt ---------------------------------------
+  // The manifest asks for landscape, but iOS ignores that for a tab or when the
+  // user rotates back, so the overlay is driven by the actual viewport instead.
+  // Touch-only: a narrow desktop window must keep working.
+  const rotateEl = document.getElementById('rotate');
+  const updateRotate = () => {
+    if (!rotateEl) return;
+    const portrait = window.innerHeight > window.innerWidth;
+    const touch = (navigator.maxTouchPoints || 0) > 0;
+    const narrow = Math.min(window.innerWidth, window.innerHeight) < 620;
+    rotateEl.classList.toggle('show', portrait && touch && narrow);
+  };
+  updateRotate();
+  window.addEventListener('resize', updateRotate);
+  window.addEventListener('orientationchange', () => setTimeout(updateRotate, 120));
+
   // --- keep the canvas aligned with the visual viewport ----------------
   const resize = () => {
     // Phaser's Scale.FIT handles the canvas; this just nudges it after iOS
     // rotates or the URL bar collapses.
     window.dispatchEvent(new Event('resize'));
+    updateRotate();
   };
   window.addEventListener('orientationchange', () => setTimeout(resize, 250));
   if (window.visualViewport) {

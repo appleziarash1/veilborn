@@ -4,5 +4,8 @@ dist/
 *.log
 .vite/
 
+# Screenshot dumps from scripts/shots.mjs (review artifacts, not shipped).
+art-review/
+
 # Art kit build artifact (source files are committed)
 veilborn-art-kit.zip

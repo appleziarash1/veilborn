@@ -38,6 +38,23 @@ export const bossPath = (id) => pick(spriteCandidates('bosses', slugify(id)));
 export const elitePath = (id) => pick(spriteCandidates('elites', slugify(id)));
 export const weaponPath = (id) => pick(spriteCandidates('weapons', slugify(id)));
 export const npcPath = (id) => pick(spriteCandidates('npcs', slugify(id)));
+export const propPath = (id) => pick(spriteCandidates('props', slugify(id)));
+
+// Room prop sprite for the chest / respite / spirit containers. Returns null
+// when the art pass has not produced one, so callers keep their primitives.
+export function propImage(scene, id, size) {
+  const path = propPath(id);
+  if (!path || !scene.textures.exists(path)) return null;
+  return scene.add.image(0, 0, path).setDisplaySize(size, size);
+}
+
+// Weapon icon for the selection cards. Art is optional like everything else,
+// so callers keep their colour swatch when this returns null.
+export function weaponIcon(scene, id, size) {
+  const path = weaponPath(id);
+  if (!path || !scene.textures.exists(path)) return null;
+  return scene.add.image(0, 0, path).setDisplaySize(size, size);
+}
 
 // Content ids the loader needs, kept as plain lists so art.js has no import
 // cycle with content.js or config.js.
@@ -53,6 +70,10 @@ export const WEAPON_IDS = [
 ];
 export const REALM_IDS = ['ash', 'tides', 'frost', 'shadows', 'throne'];
 export const PLAYER_POSES = ['idle', 'run', 'dash', 'hurt', 'death'];
+// Spoken NPCs from the dialogue pool. Cael and the Hollow have no portrait in
+// the art pass, so the event room falls back to its text-only line for those.
+export const NPC_IDS = ['mira', 'korrin', 'chronicler'];
+export const PROP_IDS = ['treasure', 'respite', 'spirit'];
 
 // Loader queue keyed by the path itself, which keeps each file loaded once even
 // when two slots share it.
@@ -66,6 +87,8 @@ export function queueArt(scene) {
   for (const id of BOSS_IDS) add(bossPath(id));
   for (const id of ELITE_IDS) add(elitePath(id));
   for (const id of WEAPON_IDS) add(weaponPath(id));
+  for (const id of NPC_IDS) add(npcPath(id));
+  for (const id of PROP_IDS) add(propPath(id));
 }
 
 // Textures are keyed by path, so these are plain existence checks.
