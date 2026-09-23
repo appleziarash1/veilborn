@@ -1,0 +1,40 @@
+name: Build and publish to gh-pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages-publish
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build for the /veilborn/ subpath
+        run: npm run build
+        env:
+          VITE_BASE: /veilborn/
+      - name: Publish dist to gh-pages
+        run: |
+          touch dist/.nojekyll
+          cd dist
+          git init -q .
+          git checkout -q -b gh-pages
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "Publish build from ${GITHUB_SHA::7}"
+          git push -f \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+            gh-pages
