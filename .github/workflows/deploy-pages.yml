@@ -32,6 +32,7 @@ jobs:
           cd dist
           git init -q .
           git checkout -q -b gh-pages
+          git add -A
           git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
               commit -q -m "Publish build from ${GITHUB_SHA::7}"
