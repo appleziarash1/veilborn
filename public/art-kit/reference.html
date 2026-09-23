@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VEILBORN — Art Reference Sheet</title>
+<style>
+  :root {
+    --bg: #090a10; --panel: #151522; --panel2: #211d30;
+    --text: #f4f1ff; --muted: #aaa4bd; --gold: #f1c75b;
+    --cyan: #63d9e8; --purple: #9c6cff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 24px 80px;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    line-height: 1.55;
+  }
+  h1 { font-size: 30px; margin: 0 0 4px; letter-spacing: .06em; }
+  h2 { font-size: 20px; margin: 44px 0 6px; color: var(--gold); letter-spacing: .04em; }
+  h3 { font-size: 15px; margin: 26px 0 8px; color: var(--cyan); text-transform: uppercase; letter-spacing: .08em; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  .note {
+    background: var(--panel2); border-left: 3px solid var(--purple);
+    padding: 12px 16px; border-radius: 6px; font-size: 14px; margin: 16px 0;
+  }
+  code { background: #000; padding: 2px 7px; border-radius: 4px; font-size: 13px; color: var(--cyan); }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 4px; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid #262234; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  td.size { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 14px; margin: 12px 0; }
+  .sw { width: 132px; }
+  .sw .chip { height: 62px; border-radius: 8px; border: 1px solid #33304a; }
+  .sw .lbl { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .sw .hex { font-size: 12px; color: var(--cyan); font-family: ui-monospace, monospace; }
+
+  /* Sprite size boxes — drawn at real pixel size so you can trace them. */
+  .boxrow { display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-end; margin: 14px 0 6px; }
+  .sbox { text-align: center; }
+  .sbox .frame {
+    background:
+      repeating-conic-gradient(#1b1a26 0% 25%, #14131c 0% 50%) 50% / 16px 16px;
+    border: 1px dashed #4a4560; border-radius: 4px;
+    display: grid; place-items: center;
+    color: var(--muted); font-size: 11px; font-family: ui-monospace, monospace;
+  }
+  .sbox .cap { font-size: 12px; color: var(--muted); margin-top: 7px; }
+  .sbox .cap b { color: var(--text); display: block; font-size: 12px; }
+  .check { list-style: none; padding: 0; margin: 10px 0; columns: 2; column-gap: 34px; }
+  .check li { font-size: 13px; padding: 4px 0; break-inside: avoid; font-family: ui-monospace, monospace; }
+  .check li::before { content: "\2610"; margin-right: 9px; color: var(--purple); }
+  .arena { position: relative; width: 100%; max-width: 900px; aspect-ratio: 16 / 9;
+    background: linear-gradient(160deg, #1a1526, #0b0a12); border: 1px solid #34304a; border-radius: 8px; margin: 12px 0; }
+  .arena .band { position: absolute; left: 4.7%; width: 90.6%; top: 20.8%; height: 69.4%;
+    border: 1px dashed var(--gold); border-radius: 4px; display: grid; place-items: center;
+    color: var(--gold); font-size: 12px; text-align: center; }
+  .arena .top { position: absolute; left: 0; right: 0; top: 0; height: 20.8%;
+    display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+  .arena .bot { position: absolute; left: 0; right: 0; bottom: 0; height: 9.8%;
+    display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+  footer { margin-top: 56px; color: var(--muted); font-size: 13px; border-top: 1px solid #262234; padding-top: 18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>VEILBORN — ART REFERENCE SHEET</h1>
+  <p class="sub">Print koro othoba khola rekhe aka. Sob size <b>actual pixel</b> — box er modhye hubohu match koro.</p>
+
+  <div class="note">
+    <b>Filename exact thakte hobe.</b> Ekta typo hole game oita chinbe na, ar chupchap
+    purono procedural style e chole jabe. Sob nam <b>lowercase <code>snake_case</code></b>,
+    kono space na, kono capital na.
+  </div>
+
+  <h2>1 · Canvas layout</h2>
+  <p class="sub">Game <b>1280 × 720</b> (16:9). Background <b>1600 × 900</b> banao — scale hoye bosbe.</p>
+  <div class="arena">
+    <div class="top">UPORE — dhorar moto detail ekhane rakho</div>
+    <div class="band">GAMEPLAY BAND — ei jaigay beshi detail dio na<br /><span style="color:var(--muted)">player, enemy, boss ekhane ghore</span></div>
+    <div class="bot">NICHE</div>
+  </div>
+
+  <h2>2 · Realm palette</h2>
+  <p class="sub">Protita realm er tint (background) ar accent (border, glow, UI).</p>
+
+  <h3>Ash — Realm of Ash</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#241416"></div><div class="lbl">Tint</div><div class="hex">#241416</div></div>
+    <div class="sw"><div class="chip" style="background:#ff714a"></div><div class="lbl">Accent</div><div class="hex">#ff714a</div></div>
+  </div>
+
+  <h3>Tides — Realm of Tides</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#101f2b"></div><div class="lbl">Tint</div><div class="hex">#101f2b</div></div>
+    <div class="sw"><div class="chip" style="background:#63d9e8"></div><div class="lbl">Accent</div><div class="hex">#63d9e8</div></div>
+  </div>
+
+  <h3>Frost — Realm of Frost</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#151c2c"></div><div class="lbl">Tint</div><div class="hex">#151c2c</div></div>
+    <div class="sw"><div class="chip" style="background:#9ec6ff"></div><div class="lbl">Accent</div><div class="hex">#9ec6ff</div></div>
+  </div>
+
+  <h3>Shadows — Realm of Shadows</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#171324"></div><div class="lbl">Tint</div><div class="hex">#171324</div></div>
+    <div class="sw"><div class="chip" style="background:#9c6cff"></div><div class="lbl">Accent</div><div class="hex">#9c6cff</div></div>
+  </div>
+
+  <h3>Throne — The Forgotten Throne</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#100d17"></div><div class="lbl">Tint</div><div class="hex">#100d17</div></div>
+    <div class="sw"><div class="chip" style="background:#f1c75b"></div><div class="lbl">Accent</div><div class="hex">#f1c75b</div></div>
+  </div>
+
+  <h3>Hub — The Shattered Gate</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#0c0b12"></div><div class="lbl">Tint</div><div class="hex">#0c0b12</div></div>
+    <div class="sw"><div class="chip" style="background:#9c6cff"></div><div class="lbl">Accent</div><div class="hex">#9c6cff</div></div>
+  </div>
+
+  <h2>3 · Sprite size boxes</h2>
+  <p class="sub">Ei box gulo <b>real pixel size</b>. Tomar chobi ei box er moto size hobe. Checkered = transparent.</p>
+
+  <div class="boxrow">
+    <div class="sbox"><div class="frame" style="width:128px;height:128px">128</div>
+      <div class="cap"><b>Player</b>128 × 128</div></div>
+    <div class="sbox"><div class="frame" style="width:128px;height:128px">128</div>
+      <div class="cap"><b>Enemy</b>128 × 128</div></div>
+    <div class="sbox"><div class="frame" style="width:192px;height:192px">192</div>
+      <div class="cap"><b>Elite aura</b>192 × 192</div></div>
+  </div>
+
+  <div class="boxrow">
+    <div class="sbox"><div class="frame" style="width:256px;height:256px">256</div>
+      <div class="cap"><b>Weapon icon</b>256 × 256</div></div>
+    <div class="sbox"><div class="frame" style="width:320px;height:320px">320</div>
+      <div class="cap"><b>NPC</b>320 × 320</div></div>
+  </div>
+
+  <div class="boxrow">
+    <div class="sbox"><div class="frame" style="width:384px;height:384px">384</div>
+      <div class="cap"><b>Boss / God</b>384 × 384</div></div>
+  </div>
+
+  <div class="note">
+    <b>Boss radius 54 pixel.</b> 384 pixel er art 108 pixel e scale hobe — tai
+    <b>bold, boro shape</b> use koro. Soro detail hariye jabe.
+  </div>
+
+  <h2>4 · Backgrounds (6)</h2>
+  <p class="sub">Size <b>1600 × 900</b>. Format <code>.webp</code> othoba <code>.png</code>.</p>
+  <table>
+    <tr><th>Filename</th><th>Realm</th><th>Design brief</th></tr>
+    <tr><td><code>ash.png</code></td><td>Realm of Ash</td><td>Pora rajprashad, chhai er moto ash porche, bhanga archive shelf</td></tr>
+    <tr><td><code>tides.png</code></td><td>Realm of Tides</td><td>Dube jawa mandir, niche theke alo, paani er neeche chhaya</td></tr>
+    <tr><td><code>frost.png</code></td><td>Realm of Frost</td><td>Jama hoye jawa watchtower, ek jodi chokh er moto janala</td></tr>
+    <tr><td><code>shadows.png</code></td><td>Realm of Shadows</td><td>Adha alo; kichu chhaya ache jeta "lukano" bujhay</td></tr>
+    <tr><td><code>throne.png</code></td><td>The Forgotten Throne</td><td>Faka singhasan, soru alo, sonar dhoa</td></tr>
+    <tr><td><code>hub.png</code></td><td>The Shattered Gate</td><td>Bhanga pother dwar, dui duniya er majhe, misty</td></tr>
+  </table>
+
+  <h2>5 · Enemies (10)</h2>
+  <p class="sub">Size <b>128 × 128</b>, transparent. Top-down view (upor theke dekha).</p>
+  <table>
+    <tr><th>Filename</th><th>Enemy</th><th>Behaviour</th><th>Color</th><th>Brief</th></tr>
+    <tr><td><code>shade_wraith.png</code></td><td>Shade Wraith</td><td>chaser</td><td class="size">#8f70d0</td><td>Ghomta, faka chokh, bhase</td></tr>
+    <tr><td><code>bone_soldier.png</code></td><td>Bone Soldier</td><td>chaser</td><td class="size">#bcb7aa</td><td>Har, bhanga taloyar</td></tr>
+    <tr><td><code>ash_hound.png</code></td><td>Ash Hound</td><td>charger</td><td class="size">#d45e58</td><td>Char pa, chhoto, agun er mukh</td></tr>
+    <tr><td><code>void_archer.png</code></td><td>Void Archer</td><td>shooter</td><td class="size">#6e72a8</td><td>Dhanuk tana, faka chokh</td></tr>
+    <tr><td><code>soul_leech.png</code></td><td>Soul Leech</td><td>drainer</td><td class="size">#6fd8a6</td><td>Kirmi/leech, sobuj alo</td></tr>
+    <tr><td><code>flame_spirit.png</code></td><td>Flame Spirit</td><td>exploder</td><td class="size">#ff7a45</td><td>Bhalo, phate jay</td></tr>
+    <tr><td><code>frost_revenant.png</code></td><td>Frost Revenant</td><td>shooter</td><td class="size">#75b8dc</td><td>Boro, jama, borof churi</td></tr>
+    <tr><td><code>cursed_knight.png</code></td><td>Cursed Knight</td><td>guardian</td><td class="size">#766b7d</td><td>Boro dhal, dhime chole, stomp</td></tr>
+    <tr><td><code>memory_eater.png</code></td><td>Memory Eater</td><td>teleporter</td><td class="size">#a05ad8</td><td>Boro mukh, khay, disappear</td></tr>
+    <tr><td><code>veil_stalker.png</code></td><td>Veil Stalker</td><td>assassin</td><td class="size">#4b3d67</td><td>Lomba, patla, lukie thake</td></tr>
+  </table>
+
+  <h2>6 · Bosses + Gods (5)</h2>
+  <p class="sub">Size <b>384 × 384</b>, transparent. Story er core — protitake memorable koro.</p>
+  <table>
+    <tr><th>Filename</th><th>Name</th><th>Color</th><th>Accent</th><th>Brief</th></tr>
+    <tr><td><code>zyther.png</code></td><td>Zyther, Lord of Ashes</td><td class="size">#d4402f</td><td class="size">#ff714a</td><td>Pora crown, agun churi, chhai er porda</td></tr>
+    <tr><td><code>seraphine.png</code></td><td>Seraphine, Queen of the Drowned</td><td class="size">#3aa8d8</td><td class="size">#63d9e8</td><td>Lomba chul paani te, mukhe gaan</td></tr>
+    <tr><td><code>auren.png</code></td><td>Auren, the Last Watcher</td><td class="size">#7fa8e0</td><td class="size">#9ec6ff</td><td>Ekta boro nishchol chokh, borof</td></tr>
+    <tr><td><code>draemor.png</code></td><td><b>Draemor, God of the Forgotten</b></td><td class="size">#7a3fd0</td><td class="size">#9c6cff</td><td>Mukh nei / adha mukh, dhoya, nam moche geche</td></tr>
+    <tr><td><code>hollow.png</code></td><td><b>The Hollow, The Empty King</b></td><td class="size">#c9a24a</td><td class="size">#f1c75b</td><td>Faka singhasan, sonar armor, bhitor faka</td></tr>
+  </table>
+
+  <h2>7 · Player, weapons, elites, NPC</h2>
+
+  <h3>Player — Cael Varen (128 × 128)</h3>
+  <table>
+    <tr><td><code>cael_idle.png</code></td><td>Dnadhe khara, chhoto cloak, mukh adha dekha</td></tr>
+    <tr><td><code>cael_run.png</code></td><td>Dourano pose (sheet dite paro: 768 × 128, 6 frame)</td></tr>
+    <tr><td><code>cael_dash.png</code></td><td>Blur / streak</td></tr>
+    <tr><td><code>cael_hurt.png</code></td><td>Pithe jhuke, laal flash</td></tr>
+    <tr><td><code>cael_death.png</code></td><td>Hatu ganu, chhaya te meshe jacche</td></tr>
+  </table>
+  <p class="sub">Lore: <i>wakes with five wounds and no memory of the sixth.</i> "Sixth wound" ta faka/dhoya chinh hisebe dekhate paro — eita story clue.</p>
+
+  <h3>Weapons (256 × 256)</h3>
+  <table>
+    <tr><td><code>ashen_edge.png</code></td><td>Chhoto blade, pora kalo dag</td><td class="size">#f0d7bd</td></tr>
+    <tr><td><code>pyre_lance.png</code></td><td>Lomba borsha, agun er chhoa</td><td class="size">#ff714a</td></tr>
+    <tr><td><code>tempest_gauntlets.png</code></td><td>Dui mutthi, bijli</td><td class="size">#7be7ff</td></tr>
+    <tr><td><code>moonthread_bow.png</code></td><td>Dhanuk, tar er moto string</td><td class="size">#d4b5ff</td></tr>
+    <tr><td><code>gravewind_scythe.png</code></td><td>Choto kachi, chhaya</td><td class="size">#9aa2b4</td></tr>
+    <tr><td><code>tidebreaker_chakrams.png</code></td><td>Dui ring, duba loha</td><td class="size">#63d9e8</td></tr>
+  </table>
+
+  <h3>Elite aura (192 × 192, adha transparent)</h3>
+  <table>
+    <tr><td><code>shielded.png</code></td><td>Nil ring / armor plate</td><td class="size">#8fb4ff</td></tr>
+    <tr><td><code>frenzied.png</code></td><td>Laal vapor, kaanp</td><td class="size">#ff8a5c</td></tr>
+    <tr><td><code>volatile.png</code></td><td>Fetfa, bright</td><td class="size">#f1c75b</td></tr>
+    <tr><td><code>warded.png</code></td><td>Rune circle</td><td class="size">#9c6cff</td></tr>
+  </table>
+
+  <h3>NPC (320 × 320) — optional, ami code likhbo</h3>
+  <table>
+    <tr><td><code>keeper.png</code></td><td>Memory shop keeper — purono, mukh dheke, hate shard</td></tr>
+    <tr><td><code>mira.png</code></td><td>Mira (story guide) — chhoto, chokh boro, worried</td></tr>
+  </table>
+
+  <h2>8 · Tick-off list</h2>
+  <p class="sub">Kaj sesh hole tick koro. Step 1 age koro.</p>
+
+  <h3>Step 1 — Backgrounds</h3>
+  <ul class="check">
+    <li>ash.png</li><li>tides.png</li><li>frost.png</li>
+    <li>shadows.png</li><li>throne.png</li><li>hub.png</li>
+  </ul>
+
+  <h3>Step 2 — Enemies</h3>
+  <ul class="check">
+    <li>shade_wraith.png</li><li>bone_soldier.png</li><li>ash_hound.png</li>
+    <li>void_archer.png</li><li>soul_leech.png</li><li>flame_spirit.png</li>
+    <li>frost_revenant.png</li><li>cursed_knight.png</li><li>memory_eater.png</li>
+    <li>veil_stalker.png</li>
+  </ul>
+
+  <h3>Step 3 — Bosses + Gods</h3>
+  <ul class="check">
+    <li>zyther.png</li><li>seraphine.png</li><li>auren.png</li>
+    <li>draemor.png</li><li>hollow.png</li>
+  </ul>
+
+  <h3>Step 4 — Player</h3>
+  <ul class="check">
+    <li>cael_idle.png</li><li>cael_run.png</li><li>cael_dash.png</li>
+    <li>cael_hurt.png</li><li>cael_death.png</li>
+  </ul>
+
+  <h3>Step 5 — Weapons</h3>
+  <ul class="check">
+    <li>ashen_edge.png</li><li>pyre_lance.png</li><li>tempest_gauntlets.png</li>
+    <li>moonthread_bow.png</li><li>gravewind_scythe.png</li><li>tidebreaker_chakrams.png</li>
+  </ul>
+
+  <h3>Step 6 — Elites</h3>
+  <ul class="check">
+    <li>shielded.png</li><li>frenzied.png</li><li>volatile.png</li><li>warded.png</li>
+  </ul>
+
+  <h2>9 · Rules — must</h2>
+  <table>
+    <tr><th>Rule</th><th>Detail</th></tr>
+    <tr><td>Filename exact</td><td>Lowercase <code>snake_case</code>. Kono space/capital na</td></tr>
+    <tr><td>Transparent</td><td>Sprite e PNG, background transparent (alpha)</td></tr>
+    <tr><td>Size exact</td><td>Boro/chhoto hole ami scale kori, quality nosto hoy</td></tr>
+    <tr><td>Safe margin</td><td>Sprite er charpashe ~8% faka rakho</td></tr>
+    <tr><td>Dark-legible</td><td>Game dark; background 50% alpha + tint chape</td></tr>
+    <tr><td>Original IP</td><td>Nijer aka. Kono game/movie er asset copy na</td></tr>
+    <tr><td>File size</td><td>Background ≤ 2 MB, sprite ≤ 500 KB</td></tr>
+    <tr><td>Total</td><td>Sob miliye ≤ 25 MB (PWA offline cache er jonno)</td></tr>
+  </table>
+
+  <h2>10 · Amake kivabe debe</h2>
+  <ol>
+    <li>Ei <code>assets/</code> folder e chobi rakho (exact structure e)</li>
+    <li><code>MANIFEST.txt</code> puro koro</li>
+    <li>Pura <code>art-kit</code> folder zip koro</li>
+    <li>Amake bolo — ami extract kore wire kore live deploy korbo</li>
+  </ol>
+
+  <div class="note">
+    <b>Step 1 (background, 6 ta) age koro.</b> Amake dao — ami wire kore live kore
+    debo, tumi dekhe decision nebe. Tarpor porer step.
+  </div>
+
+  <footer>
+    VEILBORN — original IP only. Detaille: <code>ART_GUIDE.md</code> · Quick start: <code>START_HERE.md</code>
+  </footer>
+
+</div>
+</body>
+</html>
